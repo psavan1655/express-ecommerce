@@ -1,8 +1,12 @@
 import mongoose, { mongo } from "mongoose";
-import { UserRole } from "../config/constants/roles.constant.js";
 
 const ProductSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     title: {
       type: String,
       trim: true,
@@ -18,6 +22,7 @@ const ProductSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
+      minValue: 1,
     },
     quantity: {
       type: Number,

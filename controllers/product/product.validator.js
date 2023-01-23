@@ -1,8 +1,9 @@
 import Joi from "joi";
 
-export const userValidationSchema = Joi.object({
-  firstName: Joi.string().min(2).max(50).required(),
-  lastName: Joi.string().min(2).max(50),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(8).max(30).required(),
+export const productValidationSchema = Joi.object({
+  title: Joi.string().min(2).max(50).required(),
+  description: Joi.string().min(2).max(1000),
+  image: Joi.string(),
+  price: Joi.number().min(1).required(),
+  quantity: Joi.number().min(0),
 });

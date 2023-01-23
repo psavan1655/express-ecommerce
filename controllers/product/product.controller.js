@@ -1,13 +1,19 @@
 import chalk from "chalk";
-import { userValidationSchema } from "./user.validator.js";
 import httpStatus from "http-status";
-import { fetchUsers, postUser, softDeleteUser } from "./user.service.js";
-import { UserRole } from "../../config/constants/roles.constant.js";
 import mongoose from "mongoose";
+import {
+  fetchProductById,
+  fetchProducts,
+  fetchProductsForUser,
+  postProduct,
+  softDeleteProduct,
+} from "./product.service.js";
+import { productValidationSchema } from "./product.validator.js";
+import { UserRole } from "../../config/constants/roles.constant.js";
 
 export const getAllProducts = async (req, res) => {
   try {
-    const productsList = await fetchUsers();
+    const productsList = await fetchProducts();
 
     res.success(productsList, httpStatus.OK);
   } catch (error) {
@@ -16,31 +22,7 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
-export const createUser = async (req, res) => {
-  try {
-    const userData = req.body;
-
-    // Validate with JOI Schema
-    const value = userValidationSchema.validate(userData);
-
-    if (value.error) {
-      return res.error(
-        { message: value.error.message },
-        httpStatus.UNPROCESSABLE_ENTITY
-      );
-    }
-
-    // Create user - Service
-    const userCreationResponse = await postUser(userData);
-
-    res.success(userCreationResponse, httpStatus.OK);
-  } catch (error) {
-    res.error({ message: error.message }, httpStatus.BAD_REQUEST);
-    console.log(chalk.red(error));
-  }
-};
-
-export const removeUser = async (req, res) => {
+export const getProductsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -51,11 +33,93 @@ export const removeUser = async (req, res) => {
       );
     }
 
-    if (req.user.role === UserRole.USER && req.user._id !== userId) {
+    if (req.user.role === UserRole.USER && !req.user._id.equals(userId)) {
       return res.error({ message: "Not authorized" }, httpStatus.UNAUTHORIZED);
     }
 
-    const softDeleteUserResponse = await softDeleteUser(userId);
+    const productsList = await fetchProductsForUser(userId);
+
+    res.success(productsList, httpStatus.OK);
+  } catch (error) {
+    res.error({ message: error.message }, httpStatus.INTERNAL_SERVER_ERROR);
+    console.log(chalk.bgRed(error));
+  }
+};
+
+export const getProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await fetchProductById(productId);
+
+    if (!product) {
+      return res.error(
+        { message: "No such product exists" },
+        httpStatus.NO_CONTENT
+      );
+    }
+
+    if (!req.user._id.equals(product.user)) {
+      return res.error({ message: "Not authorized" }, httpStatus.UNAUTHORIZED);
+    }
+
+    res.success(product, httpStatus.OK);
+  } catch (error) {
+    res.error({ message: error.message }, httpStatus.INTERNAL_SERVER_ERROR);
+    console.log(chalk.bgRed(error));
+  }
+};
+
+export const createProduct = async (req, res) => {
+  try {
+    const productData = req.body;
+
+    // Validate with JOI Schema
+    const value = productValidationSchema.validate(productData);
+
+    if (value.error) {
+      return res.error(
+        { message: value.error.message },
+        httpStatus.UNPROCESSABLE_ENTITY
+      );
+    }
+
+    productData.user = req.user._id;
+    // Create product - Service
+    const productCreationResponse = await postProduct(productData);
+
+    res.success(productCreationResponse, httpStatus.OK);
+  } catch (error) {
+    res.error({ message: error.message }, httpStatus.BAD_REQUEST);
+    console.log(chalk.red(error));
+  }
+};
+
+export const removeProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.error(
+        { message: "Invalid ID" },
+        httpStatus.UNPROCESSABLE_ENTITY
+      );
+    }
+
+    const product = await fetchProductById(productId);
+
+    if (!product) {
+      return res.error(
+        { message: "No such product exists" },
+        httpStatus.NO_CONTENT
+      );
+    }
+
+    if (!req.user._id.equals(product.user)) {
+      return res.error({ message: "Not authorized" }, httpStatus.UNAUTHORIZED);
+    }
+
+    const softDeleteUserResponse = await softDeleteProduct(productId);
     res.success(softDeleteUserResponse, httpStatus.OK);
   } catch (error) {
     console.log(chalk.bgRed(error));

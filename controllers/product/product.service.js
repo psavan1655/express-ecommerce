@@ -1,13 +1,46 @@
 import chalk from "chalk";
 import User from "../../models/User.js";
+import Product from "../../models/Product.js";
+import mongoose from "mongoose";
+
+/**
+ * @param(productId: number)
+ * @returns product object
+ */
+export const fetchProductById = async (productId) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      throw new Error("Invalid ID");
+    }
+
+    return Product.findOne({ _id: productId, isDeleted: false });
+  } catch (error) {
+    console.log(chalk.bgRed(error));
+    throw error;
+  }
+};
+
+/**
+ * @returns list of all active products[]
+ */
+export const fetchProducts = async () => {
+  try {
+    const productsList = await Product.find({ isDeleted: false });
+    return productsList;
+  } catch (error) {
+    console.log(chalk.bgRed(error));
+    throw error;
+  }
+};
 
 /**
  * @param(userId: number)
- * @returns user object
+ * @returns list of all active products for userId[]
  */
-export const fetchUserById = async (userId) => {
+export const fetchProductsForUser = async (userId) => {
   try {
-    return User.findOne({ _id: userId, isDeleted: false });
+    const productsList = await Product.find({ user: userId, isDeleted: false });
+    return productsList;
   } catch (error) {
     console.log(chalk.bgRed(error));
     throw error;
@@ -15,44 +48,12 @@ export const fetchUserById = async (userId) => {
 };
 
 /**
- * @param(email: string)
- * @returns user object
- */
-export const fetchUserByEmail = async (userEmail) => {
-  try {
-    return User.findOne({ email: userEmail, isDeleted: false });
-  } catch (error) {
-    console.log(chalk.bgRed(error));
-    throw error;
-  }
-};
-
-/**
- * @returns list of all active users[]
- */
-export const fetchUsers = async () => {
-  try {
-    const usersList = await User.find({ isDeleted: false });
-    return usersList.map((user) => user.parseUser());
-  } catch (error) {
-    console.log(chalk.bgRed(error));
-    throw error;
-  }
-};
-
-/**
- * @param(user: User Object)
+ * @param(product: Product Object)
  * @returns "OK"
  */
-export const postUser = async (userPayload) => {
+export const postProduct = async (productPayload) => {
   try {
-    const existingUser = await User.findOne({ email: userPayload.email });
-
-    if (existingUser) {
-      throw Error("User already exists");
-    }
-
-    await User.create(userPayload);
+    await Product.create(productPayload);
     return { message: "OK" };
   } catch (error) {
     console.log(chalk.bgRed(error));
@@ -61,20 +62,15 @@ export const postUser = async (userPayload) => {
 };
 
 /**
- * @param(userId: number)
+ * @param(productId: number)
  * @returns "OK"
  */
-export const softDeleteUser = async (userId) => {
+export const softDeleteProduct = async (productId) => {
   try {
-    const existingUser = await fetchUserById(userId);
-
-    if (!existingUser) {
-      throw Error(`No such user exists`);
-    }
-
-    existingUser.isDeleted = true;
-
-    await User.findOneAndUpdate({ _id: userId }, { $set: { isDeleted: true } });
+    await Product.findOneAndUpdate(
+      { _id: productId },
+      { $set: { isDeleted: true } }
+    );
 
     return { message: "OK" };
   } catch (error) {
