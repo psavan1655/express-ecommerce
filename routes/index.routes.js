@@ -6,7 +6,7 @@ import { login } from "../controllers/auth/auth.controller.js";
 import { isUserAuthenticated } from "../utils/passport.js";
 const router = express.Router();
 
-router.get("/test", res.send("Hello there, It works!"));
+router.get("/test", (req, res) => res.send("Hello there, It works!"));
 
 router.post("/login", login);
 
