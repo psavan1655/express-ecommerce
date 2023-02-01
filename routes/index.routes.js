@@ -10,7 +10,7 @@ router.get("/test", (req, res) => res.send("Hello there, It works!"));
 
 router.post("/login", login);
 
-router.use("/user", isUserAuthenticated, userRoutes);
+router.use("/user", userRoutes);
 router.use("/product", isUserAuthenticated, productRoutes);
 router.use("/file", isUserAuthenticated, fileRoutes);
 
